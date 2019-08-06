@@ -13,12 +13,11 @@ import com.example.florist.R;
 import com.example.florist.models.Flower;
 import com.squareup.picasso.Picasso;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class FlowerAdapter extends RecyclerView.Adapter<FlowerAdapter.FlowerViewHolder> {
 
-    private List<Flower> listFlower=new ArrayList<>();
+    private List<Flower> listFlower;
     public FlowerAdapter(List<Flower> listFlower){
         this.listFlower=listFlower;
     }
@@ -27,6 +26,12 @@ public class FlowerAdapter extends RecyclerView.Adapter<FlowerAdapter.FlowerView
 
     public interface onFlowerClickListener{
         void onClick(View view, int position);
+    }
+
+    public void setFlowers(List<Flower> listFlower)
+    {
+        this.listFlower = listFlower;
+        this.notifyDataSetChanged();
     }
 
     public void setListener(onFlowerClickListener listener) {

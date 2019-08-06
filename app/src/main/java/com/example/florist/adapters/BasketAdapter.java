@@ -10,11 +10,20 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.florist.R;
+import com.example.florist.generator.ServiceGenerator;
 import com.example.florist.models.Basket;
+import com.example.florist.models.Flower;
+import com.example.florist.services.FlowerService;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
+import static java.lang.Integer.parseInt;
 
 public class BasketAdapter extends RecyclerView.Adapter<BasketAdapter.BasketViewHolder> {
 
@@ -22,6 +31,8 @@ public class BasketAdapter extends RecyclerView.Adapter<BasketAdapter.BasketView
     public BasketAdapter(List<Basket> listBasket){
         this.listBasket=listBasket;
     }
+    public List<Flower> flowers=new ArrayList<>();
+    private FlowerService flowerService;
 
     @NonNull
     @Override
@@ -32,13 +43,31 @@ public class BasketAdapter extends RecyclerView.Adapter<BasketAdapter.BasketView
     }
 
     @Override
-    public void onBindViewHolder(@NonNull BasketAdapter.BasketViewHolder basketViewHolder, int i) {
-        Basket item=listBasket.get(i);
-        basketViewHolder.txtName.setText(item.getName());
-        basketViewHolder.txtPrice.setText("Rp"+item.getPrice().toString());;
-        basketViewHolder.txtQuantity.setText(item.getQuantity().toString());;
-        basketViewHolder.txtTotalPrice.setText("Rp"+item.getTotalPrice().toString());
-        Picasso.get().load(item.getImageUrl()).placeholder(R.drawable.ic_launcher_background).into(basketViewHolder.imageFlower);
+    public void onBindViewHolder(@NonNull final BasketAdapter.BasketViewHolder basketViewHolder, int i) {
+        final Basket item=listBasket.get(i);
+        String id_product=item.getIdProduct();
+        flowerService = ServiceGenerator.createService(FlowerService.class);
+
+        Call<List<Flower>> caloriesCall = flowerService.getFlowerDetail(parseInt(id_product));
+
+        caloriesCall.enqueue(new Callback<List<Flower>>() {
+            @Override
+            public void onResponse(Call<List<Flower>> call, Response<List<Flower>> response) {
+                flowers = response.body();
+                for(Flower f: flowers){
+                    basketViewHolder.txtName.setText(f.getName());
+                    basketViewHolder.txtPrice.setText("Rp"+f.getPrice().toString());;
+                    basketViewHolder.txtQuantity.setText(item.getQuantity().toString());;
+                    basketViewHolder.txtTotalPrice.setText("Rp"+item.getTotalPrice().toString());
+                    Picasso.get().load(f.getImageUrl()).placeholder(R.drawable.ic_launcher_background).into(basketViewHolder.imageFlower);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Flower>> call, Throwable t) {
+
+            }
+        });
     }
 
     @Override

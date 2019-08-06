@@ -2,22 +2,26 @@ package com.example.florist;
 
 import android.content.Intent;
 import android.os.Bundle;
-
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.example.florist.adapters.FlowerAdapter;
+import com.example.florist.generator.ServiceGenerator;
 import com.example.florist.models.Flower;
+import com.example.florist.services.FlowerService;
+import com.google.android.material.snackbar.Snackbar;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class HomeFragment extends Fragment implements FlowerAdapter.onFlowerClickListener {
 
@@ -28,7 +32,8 @@ public class HomeFragment extends Fragment implements FlowerAdapter.onFlowerClic
     public RecyclerView rv;
     public FlowerAdapter flowerAdapter;
     public RecyclerView.LayoutManager layoutManager;
-    public List<Flower> listFlower=new ArrayList<>();
+    public List<Flower> flowers=new ArrayList<>();
+    private FlowerService flowerService;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -36,36 +41,40 @@ public class HomeFragment extends Fragment implements FlowerAdapter.onFlowerClic
         // Inflate the layout for this fragment
         view= inflater.inflate(R.layout.fragment_home_fragment, container, false);
         rv=view.findViewById(R.id.rvFlower);
-        listFlower.add(new Flower("White Rose Bouquet",
-                40000, "https://cdn.shopify.com/s/files/1/1060/3816/products/02020302_Promise_White_Rose_Bouquet.jpeg?v=1526082961"));
-        listFlower.add(new Flower("Pink Rose Bouquet",
-                30000, "https://www.florajapan.com/images/thumbnails/465/465/detailed/4/New-Rose1.jpg"));
-        listFlower.add(new Flower("Red Rose Bouquet",
-                20000, "https://www.archiesonline.com/public/images/product/large/Red_Roses_Bouquet_89070890046682_841bb04a.jpg"));
-        listFlower.add(new Flower("Mix Rose Bouquet",
-                35000, "https://jkflorist.com/wp-content/uploads/2016/12/Bunch-Flowers-to-Sikkim-India1.jpg"));
-        listFlower.add(new Flower("White Rose Bouquet",
-                40000, "https://cdn.shopify.com/s/files/1/1060/3816/products/02020302_Promise_White_Rose_Bouquet.jpeg?v=1526082961"));
-        listFlower.add(new Flower("Pink Rose Bouquet",
-                30000, "https://www.florajapan.com/images/thumbnails/465/465/detailed/4/New-Rose1.jpg"));
-        listFlower.add(new Flower("Red Rose Bouquet",
-                20000, "https://www.archiesonline.com/public/images/product/large/Red_Roses_Bouquet_89070890046682_841bb04a.jpg"));
-        listFlower.add(new Flower("Mix Rose Bouquet",
-                35000, "https://jkflorist.com/wp-content/uploads/2016/12/Bunch-Flowers-to-Sikkim-India1.jpg"));
 
-        flowerAdapter=new FlowerAdapter(listFlower);
-        flowerAdapter.setListener(this);
-        layoutManager=new GridLayoutManager(getActivity().getApplicationContext(), 2);
-        rv.setAdapter(flowerAdapter);
-        rv.setLayoutManager(layoutManager);
+        flowerService = ServiceGenerator.createService(FlowerService.class);
+
+        Call<List<Flower>> caloriesCall = flowerService.getFlower();
+
+        final HomeFragment listener=this;
+
+        caloriesCall.enqueue(new Callback<List<Flower>>() {
+            @Override
+            public void onResponse(Call<List<Flower>> call, Response<List<Flower>> response) {
+                flowers = response.body();
+                flowerAdapter=new FlowerAdapter(flowers);
+
+                flowerAdapter.setListener(listener);
+                layoutManager=new GridLayoutManager(getActivity().getApplicationContext(), 2);
+                rv.setAdapter(flowerAdapter);
+                rv.setLayoutManager(layoutManager);
+            }
+
+            @Override
+            public void onFailure(Call<List<Flower>> call, Throwable t) {
+                Snackbar.make(view, "Oops!", Snackbar.LENGTH_SHORT).show();
+            }
+        });
+
         return view;
     }
 
+
     @Override
     public void onClick(View view, int position) {
-        Flower flower=listFlower.get(position);
+        Flower flower=flowers.get(position);
         Intent intent = new Intent(getActivity().getApplicationContext(), Order.class);
-        intent.putExtra(Key_HomeFragment, new String[] {flower.getName(), flower.getPrice().toString(), flower.getImageUrl()});
+        intent.putExtra(Key_HomeFragment, new String[] {flower.getId().toString(), flower.getName(), flower.getPrice().toString(), flower.getImageUrl()});
         startActivity(intent);
     }
 }
